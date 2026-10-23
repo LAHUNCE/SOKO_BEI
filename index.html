@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MarketPulse – All Crops Price Tracker & Alerts</title>
+<style>
+:root {
+  --bg: #0d120e;
+  --card: #151c16;
+  --card-hover: #1b261d;
+  --border: #233125;
+  --ink: #ebf3ec;
+  --ink-mute: #8ca08f;
+  --primary: #22c55e;
+  --primary-glow: rgba(34, 197, 94, 0.16);
+  --red: #ef4444;
+  --red-glow: rgba(239, 68, 68, 0.16);
+  --amber: #f59e0b;
+  --amber-glow: rgba(245, 158, 11, 0.16);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius: 12px;
+}
+[data-theme="light"] {
+  --bg: #f4f6f4;
+  --card: #ffffff;
+  --card-hover: #f9fbf9;
+  --border: #e1e7e2;
+  --ink: #111a12;
+  --ink-mute: #58695b;
+  --primary: #16a34a;
+  --primary-glow: rgba(22, 163, 74, 0.1);
+  --red: #dc2626;
+  --red-glow: rgba(220, 38, 38, 0.1);
+  --amber: #d97706;
+  --amber-glow: rgba(217, 119, 6, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  padding-bottom: 70px;
+}
+
+/* Ticker */
+.ticker-wrap {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  padding: 6px 0;
+}
+.ticker-content { display: inline-flex; gap: 32px; animation: marquee 40s linear infinite; }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* Header */
+header {
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.nav-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; font-weight: 800; font-size: 1.25rem; }
+
+.header-controls { display: flex; gap: 8px; align-items: center; }
+.btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s ease;
+}
+.btn:hover { background: var(--card-hover); border-color: var(--ink-mute); }
+.btn-primary { background: var(--primary); color: #04220c; border-color: var(--primary); }
+.btn-primary:hover { opacity: 0.9; }
+.btn-sm { padding: 4px 10px; font-size: 0.76rem; }
+.btn-danger { background: var(--red-glow); color: var(--red); border-color: var(--red); }
+
+.container { max-width: 1320px; margin: 24px auto; padding: 0 20px; }
+
+/* Tabs */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink-mute);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #04220c;
+  font-weight: 700;
+}
+.tab-badge {
+  background: #04220c;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+.tab-btn.active .tab-badge {
+  background: #ffffff;
+  color: #04220c;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+/* ALL CROPS GRID */
+.crops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.crop-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: transform .15s ease, border-color .15s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.crop-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  background: var(--card-hover);
+}
+.crop-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.crop-card-title { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.crop-card-unit { font-size: 0.72rem; color: var(--ink-mute); margin-top: 2px; }
+.crop-price-val { font-size: 1.6rem; font-weight: 800; margin: 10px 0 4px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.badge-up { background: var(--primary-glow); color: var(--primary); }
+.badge-down { background: var(--red-glow); color: var(--red); }
+
+.crop-card-markets {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  color: var(--ink-mute);
+}
+
+/* Multi-chart / Canvas */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  margin-top: 16px;
+}
+canvas { width: 100%; height: 100%; display: block; }
+
+.chart-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.legend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--bg);
+}
+.legend-pill.off { opacity: 0.35; text-decoration: line-through; }
+.legend-color-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+th { color: var(--ink-mute); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; }
+tr:hover td { background: var(--card-hover); }
+.best-tag {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* ALERTS TAB STYLES */
+.alert-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  margin-bottom: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.alert-row.triggered {
+  border-color: var(--amber);
+  background: var(--amber-glow);
+}
+.alert-meta { display: flex; align-items: center; gap: 12px; }
+.alert-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: grid;
+  place-content: center;
+  font-size: 1.3rem;
+}
+
+/* TOAST NOTIFICATION CONTAINER */
+#toastContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--card);
+  border: 1px solid var(--primary);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  padding: 14px 18px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 380px;
+  animation: slideIn .25s ease;
+}
+.toast.toast-down { border-color: var(--red); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 520px;
+  width: 90%;
+  padding: 24px;
+}
+input, select {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 8px;
+  margin: 6px 0 14px;
+  font-size: 0.95rem;
+}
+label { font-size: 0.8rem; font-weight: 600; color: var(--ink-mute); }
+</style>
+</head>
+<body>
+
+<!-- Real-time Ticker -->
+<div class="ticker-wrap">
+  <div class="ticker-content" id="tickerStream">Loading market prices...</div>
+</div>
+
+<header>
+  <div class="nav-container">
+    <a href="#" class="brand">
+      <span style="font-size:1.5rem">🌾</span>
+      <span>MarketPulse Kenya</span>
+    </a>
+    <div class="header-controls">
+      <button class="btn btn-primary" id="btnOpenNewAlert">+ Set Price Alert</button>
+      <button class="btn" id="btnSimulate">🎲 Simulate Price Shift</button>
+      <button class="btn" id="btnUploadCSV">📁 CSV Sync</button>
+      <button class="btn" id="btnTheme">☀️/🌙</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- View Navigation Tabs -->
+  <div class="view-tabs">
+    <button class="tab-btn active" data-view="grid">🌾 All Crops Overview</button>
+    <button class="tab-btn" data-view="compare">📊 Compare All Crops Trend</button>
+    <button class="tab-btn" data-view="matrix">🗺 Regional Price Matrix</button>
+    <button class="tab-btn" data-view="alerts">
+      🔔 Price Alerts <span class="tab-badge" id="alertsCountBadge">0</span>
+    </button>
+  </div>
+
+  <!-- VIEW 1: ALL CROPS OVERVIEW -->
+  <section id="viewGrid">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+      <div>
+        <h2 style="font-size:1.4rem; font-weight:800;">Live Prices for All Crops</h2>
+        <p style="font-size:0.84rem; color:var(--ink-mute);">Click the 🔔 button on any crop to set an instant price threshold alert</p>
+      </div>
+      <div>
+        <select id="benchmarkMarketFilter" style="margin:0; width:auto;">
+          <option value="Eldoret">Benchmark: Eldoret</option>
+          <option value="Kitale">Benchmark: Kitale</option>
+          <option value="Nairobi" selected>Benchmark: Nairobi</option>
+          <option value="Mombasa">Benchmark: Mombasa</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- All Crops Card Grid -->
+    <div class="crops-grid" id="allCropsGrid"></div>
+  </section>
+
+  <!-- VIEW 2: COMPARE ALL CROPS (MULTI-SERIES CHART) -->
+  <section id="viewCompare" hidden>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px;">
+        <div>
+          <h2 style="font-size:1.25rem; font-weight:800;">Multi-Crop Price Trend Comparison</h2>
+          <p style="font-size:0.84rem; color:var(--ink-mute);">Normalized price change (%) across all tracked crops</p>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm time-filter active" data-days="30">30 Days</button>
+          <button class="btn btn-sm time-filter" data-days="90">90 Days</button>
+          <button class="btn btn-sm time-filter" data-days="180">6 Months</button>
+          <button class="btn btn-sm time-filter" data-days="365">1 Year</button>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="multiChart"></canvas>
+      </div>
+      <div class="chart-legend" id="chartLegend"></div>
+    </div>
+  </section>
+
+  <!-- VIEW 3: REGIONAL PRICE MATRIX -->
+  <section id="viewMatrix" hidden>
+    <div class="card">
+      <h2 style="font-size:1.25rem; font-weight:800; margin-bottom:4px;">Regional Market Comparison Matrix</h2>
+      <p style="font-size:0.84rem; color:var(--ink-mute); margin-bottom:16px;">Cross-tabulated prices showing where each crop sells highest</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Crop Name</th>
+              <th>Unit</th>
+              <th>Eldoret</th>
+              <th>Kitale</th>
+              <th>Nairobi</th>
+              <th>Mombasa</th>
+              <th>Regional Spread</th>
+            </tr>
+          </thead>
+          <tbody id="matrixTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 4: ALERTS MANAGER -->
+  <section id="viewAlerts" hidden>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div>
+          <h2 style="font-size:1.3rem; font-weight:800;">Price Alerts & Watchlist</h2>
+          <p style="font-size:0.84rem; color:var(--ink-mute);">Get instant browser sound alerts, notifications, and WhatsApp dispatches</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" id="btnNewAlertTab">+ Add Alert</button>
+          <button class="btn" id="btnRequestNotifyPerm">Enable Browser Push</button>
+        </div>
+      </div>
+
+      <div id="alertsListContainer"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- In-App Notification Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- SET PRICE ALERT MODAL -->
+<div class="modal-overlay" id="alertModal">
+  <div class="modal-card">
+    <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:6px;">🔔 Configure Price Alert</h3>
+    <p style="font-size:0.82rem; color:var(--ink-mute); margin-bottom:16px;">Set an automated watch trigger when this crop hits your desired target price.</p>
+
+    <form id="createAlertForm">
+      <label>Select Crop</label>
+      <select id="modalAlertCrop"></select>
+
+      <label>Target Market</label>
+      <select id="modalAlertMarket">
+        <option value="Nairobi">Nairobi</option>
+        <option value="Eldoret">Eldoret</option>
+        <option value="Kitale">Kitale</option>
+        <option value="Mombasa">Mombasa</option>
+        <option value="ALL">Any Market</option>
+      </select>
+
+      <label>Trigger Condition</label>
+      <select id="modalAlertCondition">
+        <option value="above">Price rises above or equals (≥)</option>
+        <option value="below">Price drops below or equals (≤)</option>
+      </select>
+
+      <label>Target Price (KES)</label>
+      <input type="number" id="modalAlertPrice" placeholder="e.g. 3500" required>
+      <div id="currentPriceHint" style="font-size:0.75rem; color:var(--ink-mute); margin-top:-8px; margin-bottom:12px;"></div>
+
+      <label>Optional WhatsApp Number (e.g. 2547XXXXXXXX)</label>
+      <input type="tel" id="modalAlertPhone" placeholder="254712345678">
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button type="button" class="btn" id="btnCloseAlertModal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Price Watch</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CSV DATA MODAL -->
+<div class="modal-overlay" id="csvModal">
+  <div class="modal-card">
+    <h3 style="margin-bottom:8px;">Load Your Own Market Data</h3>
+    <p style="font-size:0.8rem; color:var(--ink-mute); margin-bottom:14px;">Upload a CSV file or paste a Google Sheet CSV link. Headers: <code>date,crop,market,price</code>.</p>
+    
+    <label>Upload CSV File</label>
+    <input type="file" id="localCsvInput" accept=".csv">
+
+    <label>Or Google Sheets CSV URL</label>
+    <input type="url" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn" id="btnResetDefault">Restore Defaults</button>
+      <button class="btn btn-primary" id="btnApplyCSV">Apply Data</button>
+      <button class="btn" id="btnCloseModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= DATA REGISTRY =================
+const DEFAULT_CROPS = {
+  maize:    { name: "White Maize", emoji: "🌽", unit: "90 kg bag", color: "#22c55e", base: { Eldoret:3200, Kitale:3050, Nairobi:3650, Mombasa:3800 } },
+  beans:    { name: "Rosecoco Beans", emoji: "🫘", unit: "90 kg bag", color: "#eab308", base: { Eldoret:9200, Kitale:8900, Nairobi:10400, Mombasa:10800 } },
+  potatoes: { name: "Irish Potatoes", emoji: "🥔", unit: "50 kg bag", color: "#f97316", base: { Eldoret:1800, Kitale:1650, Nairobi:2400, Mombasa:2600 } },
+  milk:     { name: "Raw Dairy Milk", emoji: "🥛", unit: "per litre", color: "#38bdf8", base: { Eldoret:50, Kitale:48, Nairobi:62, Mombasa:68 } },
+  tomatoes: { name: "Fresh Tomatoes", emoji: "🍅", unit: "64 kg crate", color: "#ef4444", base: { Eldoret:4200, Kitale:3900, Nairobi:5100, Mombasa:5400 } },
+  onions:   { name: "Red Bulb Onions", emoji: "🧅", unit: "50 kg bag", color: "#a855f7", base: { Eldoret:3400, Kitale:3300, Nairobi:4100, Mombasa:4300 } },
+  wheat:    { name: "Milling Wheat", emoji: "🌾", unit: "90 kg bag", color: "#e2e8f0", base: { Eldoret:4500, Kitale:4400, Nairobi:4950, Mombasa:5100 } },
+  cabbage:  { name: "Green Cabbage", emoji: "🥬", unit: "per piece", color: "#10b981", base: { Eldoret:40, Kitale:35, Nairobi:65, Mombasa:75 } }
+};
+
+const MARKETS = ["Eldoret", "Kitale", "Nairobi", "Mombasa"];
+let CROPS = { ...DEFAULT_CROPS };
+let dataset = [];
+let activeDays = 30;
+let hiddenCrops = new Set();
+let selectedBenchmark = "Nairobi";
+let alerts = JSON.parse(localStorage.getItem("mp_active_alerts") || "[]");
+
+// ================= GENERATE COMPLETE HISTORY =================
+function generateSyntheticDataset(daysBack = 180) {
+  const rows = [];
+  const now = new Date();
+
+  Object.keys(CROPS).forEach((cKey, cIdx) => {
+    const c = CROPS[cKey];
+    MARKETS.forEach((m, mIdx) => {
+      const base = c.base?.[m] || 1500;
+      let price = base * 0.92;
+
+      for (let i = daysBack; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const wave = Math.sin((daysBack - i) / 20 + cIdx + mIdx) * 0.08;
+        const noise = (Math.random() - 0.49) * 0.02;
+        price = price * (1 + noise) + (base * wave * 0.01);
+        const finalPrice = Math.round(price * (cKey === "milk" || cKey === "cabbage" ? 1 : 10)) / (cKey === "milk" || cKey === "cabbage" ? 1 : 10);
+
+        rows.push({
+          date: d.toISOString().slice(0, 10),
+          crop: cKey,
+          market: m,
+          price: finalPrice
+        });
+      }
+    });
+  });
+  return rows;
+}
+
+const kes = n => "KES " + Number(n).toLocaleString("en-KE", { maximumFractionDigits: 1 });
+
+function getSeries(crop, market, days = 30) {
+  return dataset
+    .filter(r => r.crop === crop && (market === "ALL" || r.market === market))
+    .sort((a, b) => (a.date > b.date ? 1 : -1))
+    .slice(-days);
+}
+
+function getLatestPrice(crop, market = "Nairobi") {
+  const s = getSeries(crop, market, 1);
+  return s[0] ? s[0].price : 0;
+}
+
+function miniSparklineSVG(pts, color) {
+  if (pts.length < 2) return "";
+  const w = 70, h = 22;
+  const min = Math.min(...pts), max = Math.max(...pts), range = (max - min) || 1;
+  const coords = pts.map((p, i) => {
+    const x = (i / (pts.length - 1)) * w;
+    const y = h - ((p - min) / range) * (h - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg width="${w}" height="${h}"><polyline fill="none" stroke="${color}" stroke-width="2" points="${coords}"/></svg>`;
+}
+
+// ================= RENDER ALL CROPS OVERVIEW =================
+function renderAllCropsGrid() {
+  const grid = document.getElementById("allCropsGrid");
+  const targetMarket = selectedBenchmark;
+
+  grid.innerHTML = Object.keys(CROPS).map(cKey => {
+    const crop = CROPS[cKey];
+    const series = getSeries(cKey, targetMarket, 14);
+    if (!series.length) return "";
+
+    const curr = series[series.length - 1].price;
+    const prev = series[series.length - 2]?.price || curr;
+    const diff = curr - prev;
+    const pct = prev ? ((diff / prev) * 100).toFixed(1) : 0;
+    const isUp = diff >= 0;
+
+    let bestM = "", bestP = -1;
+    MARKETS.forEach(m => {
+      const s = getSeries(cKey, m, 1);
+      if (s[0] && s[0].price > bestP) {
+        bestP = s[0].price;
+        bestM = m;
+      }
+    });
+
+    const sparkPts = series.map(s => s.price);
+
+    return `
+      <div class="crop-card">
+        <div>
+          <div class="crop-card-top">
+            <div>
+              <div class="crop-card-title">${crop.emoji || "🌱"} ${crop.name}</div>
+              <div class="crop-card-unit">${crop.unit}</div>
+            </div>
+            <div>${miniSparklineSVG(sparkPts, crop.color || "#22c55e")}</div>
+          </div>
+          <div class="crop-price-val">${kes(curr)}</div>
+          <div class="badge ${isUp ? "badge-up" : "badge-down"}">
+            ${isUp ? "▲" : "▼"} ${kes(Math.abs(diff))} (${Math.abs(pct)}%)
+          </div>
+        </div>
+        <div class="crop-card-markets">
+          <span>Best: <strong style="color:var(--primary)">${bestM} (${kes(bestP)})</strong></span>
+          <button class="btn btn-sm" onclick="quickAlertOpen('${cKey}','${targetMarket}',${curr})">🔔 Alert</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ================= MULTI-CROP COMPARISON CHART =================
+function renderMultiCropChart() {
+  const canvas = document.getElementById("multiChart");
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width, h = rect.height;
+  const pad = { top: 20, right: 30, bottom: 40, left: 60 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const activeCrops = Object.keys(CROPS).filter(c => !hiddenCrops.has(c));
+  if (!activeCrops.length) return;
+
+  const seriesByCrop = {};
+  let dates = [];
+
+  activeCrops.forEach(c => {
+    const s = getSeries(c, "Nairobi", activeDays);
+    if (s.length) {
+      const basePrice = s[0].price || 1;
+      seriesByCrop[c] = s.map(pt => ({
+        date: pt.date,
+        rawPrice: pt.price,
+        index: ((pt.price - basePrice) / basePrice) * 100
+      }));
+      if (s.length > dates.length) dates = s.map(pt => pt.date);
+    }
+  });
+
+  const allIndices = Object.values(seriesByCrop).flatMap(s => s.map(pt => pt.index));
+  let minIdx = Math.min(...allIndices, 0);
+  let maxIdx = Math.max(...allIndices, 5);
+  const span = (maxIdx - minIdx) || 1;
+  minIdx -= span * 0.1;
+  maxIdx += span * 0.1;
+
+  const n = dates.length;
+  const getX = i => pad.left + i * (chartW / Math.max(n - 1, 1));
+  const getY = v => pad.top + ((maxIdx - v) / (maxIdx - minIdx)) * chartH;
+
+  ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue("--border").trim() || "#233125";
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue("--ink-mute").trim() || "#8ca08f";
+  ctx.font = "11px system-ui";
+  ctx.textAlign = "right";
+
+  for (let step = 0; step <= 4; step++) {
+    const val = minIdx + (maxIdx - minIdx) * (step / 4);
+    const yPos = getY(val);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, yPos);
+    ctx.lineTo(w - pad.right, yPos);
+    ctx.stroke();
+    ctx.fillText(`${val >= 0 ? "+" : ""}${val.toFixed(0)}%`, pad.left - 8, yPos + 4);
+  }
+
+  // Draw lines
+  activeCrops.forEach(c => {
+    const pts = seriesByCrop[c];
+    if (!pts) return;
+    ctx.strokeStyle = CROPS[c].color || "#22c55e";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    pts.forEach((pt, i) => {
+      const x = getX(i), y = getY(pt.index);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+
+  renderLegend();
+}
+
+function renderLegend() {
+  const legend = document.getElementById("chartLegend");
+  legend.innerHTML = Object.keys(CROPS).map(c => {
+    const crop = CROPS[c];
+    const isHidden = hiddenCrops.has(c);
+    return `
+      <div class="legend-pill ${isHidden ? "off" : ""}" onclick="toggleCropLegend('${c}')">
+        <span class="legend-color-dot" style="background:${crop.color || "#22c55e"}"></span>
+        <span>${crop.emoji || "🌱"} ${crop.name}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+window.toggleCropLegend = function(cropKey) {
+  if (hiddenCrops.has(cropKey)) hiddenCrops.delete(cropKey);
+  else hiddenCrops.add(cropKey);
+  renderMultiCropChart();
+};
+
+// ================= REGIONAL MATRIX =================
+function renderMatrixTable() {
+  const tbody = document.getElementById("matrixTableBody");
+  tbody.innerHTML = Object.keys(CROPS).map(cKey => {
+    const crop = CROPS[cKey];
+    const prices = MARKETS.map(m => getSeries(cKey, m, 1)[0]?.price || 0);
+    const maxP = Math.max(...prices);
+    const minP = Math.min(...prices.filter(p => p > 0));
+    const spread = maxP - minP;
+
+    return `
+      <tr>
+        <td><strong>${crop.emoji || "🌱"} ${crop.name}</strong></td>
+        <td style="color:var(--ink-mute);">${crop.unit}</td>
+        ${prices.map((p) => `
+          <td><strong>${kes(p)}</strong> ${p === maxP ? `<span class="best-tag">BEST</span>` : ""}</td>
+        `).join("")}
+        <td><strong style="color:var(--primary)">+${kes(spread)}</strong></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// ================= ALERTS ENGINE =================
+function saveAlerts() {
+  localStorage.setItem("mp_active_alerts", JSON.stringify(alerts));
+  document.getElementById("alertsCountBadge").textContent = alerts.length;
+}
+
+function renderAlertsManager() {
+  const container = document.getElementById("alertsListContainer");
+  document.getElementById("alertsCountBadge").textContent = alerts.length;
+
+  if (!alerts.length) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px 20px; color:var(--ink-mute);">
+        <div style="font-size:2.5rem; margin-bottom:10px;">🔔</div>
+        <h3>No Price Watches Active</h3>
+        <p style="font-size:0.85rem; margin-top:4px;">Set alerts to be notified when any crop drops below or rises above your target price.</p>
+        <button class="btn btn-primary" onclick="quickAlertOpen('maize','Nairobi',3650)" style="margin-top:16px;">+ Set First Alert</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = alerts.map(a => {
+    const crop = CROPS[a.crop] || { name: a.crop, emoji: "🌱", unit: "" };
+    const currentPrice = getLatestPrice(a.crop, a.market === "ALL" ? "Nairobi" : a.market);
+    const isTriggered = a.triggered;
+    const condText = a.condition === "above" ? "rises above (≥)" : "drops below (≤)";
+
+    return `
+      <div class="alert-row ${isTriggered ? "triggered" : ""}">
+        <div class="alert-meta">
+          <div class="alert-icon">${crop.emoji}</div>
+          <div>
+            <strong>${crop.name} (${a.market})</strong>
+            <div style="font-size:0.78rem; color:var(--ink-mute);">
+              Alert when price ${condText} <strong>${kes(a.targetPrice)}</strong>
+            </div>
+            <div style="font-size:0.75rem; margin-top:2px;">
+              Current Price: <strong>${kes(currentPrice)}</strong>
+              ${isTriggered ? `<span style="color:var(--amber); font-weight:700; margin-left:6px;">⚠️ TRIGGERED</span>` : ""}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          ${a.phone ? `<button class="btn btn-sm" onclick="sendWhatsAppAlert('${a.id}')">💬 WhatsApp</button>` : ""}
+          <button class="btn btn-sm" onclick="rearmAlert('${a.id}')">${isTriggered ? "🔄 Re-Arm" : "✓ Active"}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteAlert('${a.id}')">✕ Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.quickAlertOpen = function(cropKey, market, currentPrice) {
+  const cropSelect = document.getElementById("modalAlertCrop");
+  cropSelect.innerHTML = Object.keys(CROPS).map(k => `<option value="${k}">${CROPS[k].emoji} ${CROPS[k].name}</option>`).join("");
+  cropSelect.value = cropKey;
+
+  document.getElementById("modalAlertMarket").value = market || "Nairobi";
+  document.getElementById("modalAlertPrice").value = currentPrice || getLatestPrice(cropKey, market);
+  document.getElementById("currentPriceHint").textContent = `Current price in ${market}: ${kes(currentPrice || getLatestPrice(cropKey, market))}`;
+
+  document.getElementById("alertModal").classList.add("open");
+};
+
+window.deleteAlert = function(id) {
+  alerts = alerts.filter(a => a.id !== id);
+  saveAlerts();
+  renderAlertsManager();
+};
+
+window.rearmAlert = function(id) {
+  const item = alerts.find(a => a.id === id);
+  if (item) {
+    item.triggered = false;
+    saveAlerts();
+    renderAlertsManager();
+    showToast("Watch Re-Armed", `Monitoring ${CROPS[item.crop]?.name} again.`);
+  }
+};
+
+window.sendWhatsAppAlert = function(id) {
+  const a = alerts.find(x => x.id === id);
+  if (!a || !a.phone) return;
+  const crop = CROPS[a.crop];
+  const curr = getLatestPrice(a.crop, a.market === "ALL" ? "Nairobi" : a.market);
+  const msg = `🚨 [MarketPulse Alert]\n${crop.name} in ${a.market} hit ${kes(curr)}!\nTarget rule: ${a.condition} ${kes(a.targetPrice)}.`;
+  window.open(`https://wa.me/${a.phone}?text=${encodeURIComponent(msg)}`, "_blank");
+};
+
+// ================= CHECK ALERT TRIGGER ENGINE =================
+function checkAllAlertRules() {
+  alerts.forEach(a => {
+    if (a.triggered) return; // already fired
+
+    const testMarkets = a.market === "ALL" ? MARKETS : [a.market];
+    testMarkets.forEach(m => {
+      const price = getLatestPrice(a.crop, m);
+      if (!price) return;
+
+      let fired = false;
+      if (a.condition === "above" && price >= a.targetPrice) fired = true;
+      if (a.condition === "below" && price <= a.targetPrice) fired = true;
+
+      if (fired) {
+        a.triggered = true;
+        saveAlerts();
+        renderAlertsManager();
+        fireNotification(a, price, m);
+      }
+    });
+  });
+}
+
+function fireNotification(alertObj, triggeredPrice, marketName) {
+  const crop = CROPS[alertObj.crop];
+  const dir = alertObj.condition === "above" ? "surpassed" : "fallen below";
+  const title = `🚨 Price Alert: ${crop.name} (${marketName})`;
+  const body = `${crop.name} has ${dir} your threshold of ${kes(alertObj.targetPrice)} and is now trading at ${kes(triggeredPrice)}!`;
+
+  // 1. Play Audio Ping
+  playAlertChime();
+
+  // 2. In-app Toast
+  showToast(title, body, alertObj.condition === "below");
+
+  // 3. Browser Push
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body: body, icon: "🌾" });
+  }
+
+  // 4. WhatsApp prompt if phone is configured
+  if (alertObj.phone) {
+    setTimeout(() => {
+      const sendNow = confirm(`Price target reached for ${crop.name}! Open WhatsApp to notify ${alertObj.phone}?`);
+      if (sendNow) window.sendWhatsAppAlert(alertObj.id);
+    }, 400);
+  }
+}
+
+// Web Audio API Synthesizer Ping
+function playAlertChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+    osc.frequency.exponentialRampToValueAtTime(880.00, ctx.currentTime + 0.15); // A5
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.55);
+  } catch(e) {}
+}
+
+function showToast(title, msg, isDown = false) {
+  const box = document.getElementById("toastContainer");
+  const el = document.createElement("div");
+  el.className = `toast ${isDown ? "toast-down" : ""}`;
+  el.innerHTML = `
+    <div style="font-size:1.5rem;">${isDown ? "📉" : "📈"}</div>
+    <div>
+      <strong style="font-size:0.85rem; display:block;">${title}</strong>
+      <span style="font-size:0.76rem; color:var(--ink-mute);">${msg}</span>
+    </div>
+  `;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+// ================= TICKER & SIMULATION =================
+function updateTicker() {
+  const ticker = document.getElementById("tickerStream");
+  const items = Object.keys(CROPS).map(c => {
+    const crop = CROPS[c];
+    const s = getSeries(c, "Nairobi", 2);
+    if (s.length < 2) return "";
+    const curr = s[1].price, diff = curr - s[0].price;
+    return `
+      <span>${crop.emoji || "🌱"} <strong>${crop.name}</strong> (${kes(curr)})
+      <span style="color:${diff >= 0 ? "var(--primary)" : "var(--red)"}">${diff >= 0 ? "▲" : "▼"}${kes(Math.abs(diff))}</span></span>
+    `;
+  }).filter(Boolean);
+  ticker.innerHTML = items.join("") + items.join("");
+}
+
+// ================= INITIALIZE & EVENTS =================
+function updateAllViews() {
+  renderAllCropsGrid();
+  renderMultiCropChart();
+  renderMatrixTable();
+  renderAlertsManager();
+  updateTicker();
+  checkAllAlertRules();
+}
+
+function initEvents() {
+  // Tab Switcher
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const v = btn.dataset.view;
+      document.getElementById("viewGrid").hidden = v !== "grid";
+      document.getElementById("viewCompare").hidden = v !== "compare";
+      document.getElementById("viewMatrix").hidden = v !== "matrix";
+      document.getElementById("viewAlerts").hidden = v !== "alerts";
+      if (v === "compare") renderMultiCropChart();
+      if (v === "alerts") renderAlertsManager();
+    });
+  });
+
+  // Alert Form Submit
+  document.getElementById("createAlertForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const newAlert = {
+      id: "alt_" + Date.now(),
+      crop: document.getElementById("modalAlertCrop").value,
+      market: document.getElementById("modalAlertMarket").value,
+      condition: document.getElementById("modalAlertCondition").value,
+      targetPrice: parseFloat(document.getElementById("modalAlertPrice").value),
+      phone: document.getElementById("modalAlertPhone").value.trim(),
+      triggered: false,
+      createdAt: new Date().toISOString()
+    };
+
+    alerts.push(newAlert);
+    saveAlerts();
+    document.getElementById("alertModal").classList.remove("open");
+    renderAlertsManager();
+    showToast("Price Watch Set!", `Watching ${CROPS[newAlert.crop].name} at ${kes(newAlert.targetPrice)}`);
+    checkAllAlertRules();
+  });
+
+  // Request Push Permission
+  document.getElementById("btnRequestNotifyPerm").addEventListener("click", () => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(p => {
+        alert(p === "granted" ? "Browser Push Notifications Active!" : "Notifications was " + p);
+      });
+    }
+  });
+
+  // Buttons to open Alert modal
+  document.getElementById("btnOpenNewAlert").addEventListener("click", () => quickAlertOpen("maize", "Nairobi"));
+  document.getElementById("btnNewAlertTab").addEventListener("click", () => quickAlertOpen("maize", "Nairobi"));
+  document.getElementById("btnCloseAlertModal").addEventListener("click", () => document.getElementById("alertModal").classList.remove("open"));
+
+  // Market Dropdown filter for grid
+  document.getElementById("benchmarkMarketFilter").addEventListener("change", e => {
+    selectedBenchmark = e.target.value;
+    renderAllCropsGrid();
+  });
+
+  // Simulate Market Shift (Perturb prices to test alert triggers!)
+  document.getElementById("btnSimulate").addEventListener("click", () => {
+    dataset.forEach(row => {
+      // Perturb today's row by ±4%
+      if (Math.random() < 0.4) {
+        const delta = (Math.random() - 0.48) * 0.08;
+        row.price = Math.round((row.price * (1 + delta)) * 10) / 10;
+      }
+    });
+    updateAllViews();
+  });
+
+  // Theme Toggle
+  document.getElementById("btnTheme").addEventListener("click", () => {
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+    renderMultiCropChart();
+  });
+
+  // CSV Modal
+  const csvModal = document.getElementById("csvModal");
+  document.getElementById("btnUploadCSV").addEventListener("click", () => csvModal.classList.add("open"));
+  document.getElementById("btnCloseModal").addEventListener("click", () => csvModal.classList.remove("open"));
+  document.getElementById("btnResetDefault").addEventListener("click", () => {
+    CROPS = { ...DEFAULT_CROPS };
+    dataset = generateSyntheticDataset(180);
+    csvModal.classList.remove("open");
+    updateAllViews();
+  });
+
+  window.addEventListener("resize", () => {
+    if (!document.getElementById("viewCompare").hidden) renderMultiCropChart();
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  initEvents();
+  dataset = generateSyntheticDataset(180);
+  saveAlerts();
+  updateAllViews();
+});
+</script>
+</body>
+</html>
